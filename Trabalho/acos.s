@@ -267,11 +267,11 @@ Syscall_write_serial:
         li t1, 0xFFFF0501
         sb t0, (t1)
         # Triggers serial port to write
-        li t2, 0xFFFF0500
+        li t1, 0xFFFF0500
         li t4, 1
-        sb t4, (t2)
+        sb t4, (t1)
         0:
-            lb t4, (t2)
+            lb t4, (t1)
             bnez t4, 0b
         # Passa para o próximo índice do buffer e adiciona 1 no contador
         addi t3, t3, 1

@@ -267,11 +267,11 @@ Syscall_write_serial:
         li t1, 0xFFFF0501
         sb t0, (t1)
         # Triggers serial port to write
-        li t2, 0xFFFF0500
+        li t1, 0xFFFF0500
         li t4, 1
-        sb t4, (t2)
+        sb t4, (t1)
         0:
-            lb t4, (t2)
+            lb t4, (t1)
             bnez t4, 0b
         # Passa para o próximo índice do buffer e adiciona 1 no contador
         addi t3, t3, 1
@@ -301,14 +301,23 @@ Syscall_get_systime:
 set_engine:
 # parâmetros: a0 = veritcal movement; a1 = horizontal movement
 # retorno: a0 = 0 -> sucesso; a0 = -1 -> erro
+    addi sp, sp, -4
+    sw ra, (sp)
+
     li a7, 10
     ecall
+    
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl set_handbrake
 set_handbrake:
 # parâmetros: a0 = byte que define se vai ser ligado ou não. 1 -> aciona, 0 -> para de usar
 # retorno: -1 se parâmetro é inválido; 0 se sucesso
+    addi sp, sp, -4
+    sw ra, (sp)
+    
     li a7, 11
     beq a0, zero, parar
     li t0, 1
@@ -325,44 +334,73 @@ set_handbrake:
     1:
     li a0, 0
     2:
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl read_sensor_distance
 read_sensor_distance:
 # parâmetros: nenhum
 # retorno: distância lida pelo sensor, em centímetros
+    addi sp, sp, -4
+    sw ra, (sp)
+
     li a7, 13
     ecall
+    
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl get_position 
 get_position:
 # parâmetros: igual da syscall
 # retorno: nenhum
+    addi sp, sp, -4
+    sw ra, (sp)
+    
     li a7, 15
     ecall
+    
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl get_rotation 
 get_rotation:
 # parâmetros: mesmos da syscall
 # retorno: nenhhum
+    addi sp, sp, -4
+    sw ra, (sp)
+    
     li a7, 16
     ecall
+    
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl get_time 
 get_time:
 # parâmetros: nenhum
 # retorno: tempoo do sistema em milisegundos
+    addi sp, sp, -4
+    sw ra, (sp)
+    
     li a7, 20
     ecall
+    
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl puts
 puts:
 # parâmetros: endereço da string terminada em \0
 # retorno: nenhum
+    addi sp, sp, -4
+    sw ra, (sp)
+
     li a7, 18
     mv t0, a0
     mv t4, a0
@@ -386,28 +424,31 @@ puts:
     li t1, 0
     sb t1, (a0)     # String volta a terminar com \0
     mv a0, t4       # a0 aponta pro endereço do inicio da string
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl gets
 gets:
 # parâmetros: a0 = endereço do buffer a ser preenchido
 # retorno: buffer preenchido com a string terminada em \0
+    addi sp, sp, -4
+    sw ra, (sp)
+
     li a7, 17
     li a1, 1
     mv t1, a0
-    li t2, '\n'
-    mv t3, a0
     0:
         mv a0, t1
         ecall
         lb t3, (t1)
-        beq t3, t2, 1f
+        beqz t3, 1f
         addi t1, t1, 1
         j 0b
     1:
-    teste:
-    sb zero, (t0)
-    mv a0, t1
+    
+    lw ra, (sp)
+    addi sp, sp, 4
     ret
 
 .globl atoi
@@ -586,6 +627,12 @@ main:
     # jal puts
     la a0, buffer2
     jal gets
+    # li a0, 1234
+    # la a1, buffer2
+    # li a2, 10
+    # jal itoa
+    # la a0, buffer2
+    # jal puts
 
 .section .data
 buffer: .asciz "Hello\0"
@@ -599,4 +646,4 @@ systm_stack:                   # Final da pilha do sistema
 .skip 1024                     # Aloca 1024 bytes para a pilha
 systm_stack_end:               # Base da pilha do sistema
 
-buffer2: .skip 10
+buffer2: .skip 13
