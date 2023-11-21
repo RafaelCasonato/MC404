@@ -1,0 +1,117 @@
+.section .text
+.globl _start
+_start:
+    # Read
+    li a0, 0  # file descriptor = 0 (stdin)
+    la a1, input_address #  buffer to write the data
+    li a2, 20  # size (reads only 1 byte)
+    li a7, 63 # syscall read (63)
+    ecall
+
+    mv a0, a1
+    jal char_to_int
+
+    la a0, head_node
+    li t0, 0
+    for:
+        beqz a0, saida1
+        lw t1, (a0)
+        lw t2, 4(a0)
+        add t3, t2, t1
+        beq t3, a1, saida2
+        addi t0, t0, 1
+        lw a0, 8(a0)
+        j for
+    saida1:
+    li a1, -1
+    j cont 
+    saida2:   
+    mv a1, t0
+    cont:
+    la a2, output_address
+    addi a2, a2, 7
+    jal int_to_char
+
+    # jal tamanho
+
+    # Write
+    li a0, 1                    # file descriptor = 1 (stdout)
+    la a1, output_address       # buffer
+    li a2, 20                   # size
+    li a7, 64                   # syscall write (64)
+    ecall    
+
+    # Exit
+    li a0, 0
+    li a7, 93
+    ecall
+
+char_to_int:
+    li t0, 10                       # t0 = valor em ASCII para '\n'
+    li t1, 45                       # t1 = valor em ASCII para '-'
+    
+    li t4, 0                        # t4 = inteiro
+    li t5, 10
+
+    li t3, 1
+    lb t2, (a0)                     # t2 = primeiro byte de a0
+    bne t1, t2, while               # confere se é negativo
+    addi a0, a0, 1
+    li t3, -1
+    while:
+        lb t2, (a0)
+        beq t0, t2, continua
+        addi t2, t2, -48
+        mul t4, t4, t5    
+        add t4, t4, t2
+        addi a0, a0, 1
+        j while
+    continua:
+    mul t4, t4, t3
+    mv a1, t4
+    ret
+
+int_to_char:
+    # Entrada a2 e a1
+    li t1, 0
+    bge a1, zero, 1f
+    li t1, -1
+    mul a1, a1, t1
+    1:
+    li t0, 10
+    sb t0, (a2)
+    li t3, 10
+    li t2, 1
+    while2:
+        addi a2, a2, -1
+        div t2, a1, t3
+        rem t0, a1, t3
+        addi t0, t0, 48
+        sb t0, (a2)
+        beqz t2, 2f
+        j while2
+    2: 
+    beqz t1, 3f
+    li t0, 45
+    addi a2, a2, -1
+    sb t0, (a2)
+    3: 
+    ret
+
+# tamanho:
+#    mv t1, a2
+#    mv t0, zero
+#    li t3, 10
+#    while3:
+#        addi t0, t0, 1
+#        addi t1, t1, 1
+#        lbu t4, (t1)
+#        beq t4, t3, 1f
+#        j while3
+#    1:
+#    addi t0, t0, 1
+#    ret
+
+.section .bss
+input_address: .skip 8 
+output_address: .skip 8
